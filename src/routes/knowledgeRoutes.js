@@ -7,11 +7,23 @@ const Knowledge = require("../models/Knowledge");
 
 const router = express.Router();
 
-/* ---------------- MULTER CONFIG ---------------- */
+/* ===============================
+   ENSURE UPLOAD FOLDER EXISTS
+================================= */
+
+const uploadDir = path.join(__dirname, "../uploads/knowledge");
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+/* ===============================
+   MULTER CONFIG
+================================= */
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/knowledge");
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     const uniqueName =
@@ -33,30 +45,22 @@ const upload = multer({
   fileFilter,
 });
 
-/* ---------------- ROUTES ---------------- */
+/* ===============================
+   POST /knowledge/upload
+   Upload PDF
+================================= */
 
-/**
- * POST /knowledge
- * Upload PDF + title
- * Automatically extracts text from PDF
- */
-router.post("/", upload.single("file"), async (req, res) => {
+router.post("/upload", upload.single("pdf"), async (req, res) => {
   try {
-    const { title } = req.body;
-
-    if (!title || !req.file) {
+    if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: "Title and PDF file are required",
+        message: "PDF file is required",
       });
     }
 
-    // Read uploaded PDF file
     const fileBuffer = fs.readFileSync(req.file.path);
-
-    // Extract text from PDF
     const pdfData = await pdfParse(fileBuffer);
-
     const extractedText = pdfData.text;
 
     if (!extractedText || extractedText.trim().length === 0) {
@@ -66,31 +70,31 @@ router.post("/", upload.single("file"), async (req, res) => {
       });
     }
 
-    // Save to MongoDB
     const knowledge = await Knowledge.create({
-      title,
+      title: req.file.originalname,
       content: extractedText,
       filePath: req.file.path,
     });
 
     res.json({
       success: true,
-      knowledge,
+      file: knowledge,
     });
+
   } catch (err) {
-    console.error("SAVE KNOWLEDGE ERROR:", err);
+    console.error("UPLOAD KNOWLEDGE ERROR:", err);
 
     res.status(500).json({
       success: false,
-      message: "Failed to save knowledge",
+      message: "Failed to upload PDF",
     });
   }
 });
 
-/**
- * GET /knowledge
- * Fetch all knowledge entries
- */
+/* ===============================
+   GET /knowledge
+================================= */
+
 router.get("/", async (req, res) => {
   try {
     const knowledge = await Knowledge.find().sort({
@@ -99,13 +103,53 @@ router.get("/", async (req, res) => {
 
     res.json({
       success: true,
-      knowledge,
+      files: knowledge,
     });
+
   } catch (err) {
     console.error("FETCH KNOWLEDGE ERROR:", err);
+
     res.status(500).json({
       success: false,
       message: "Failed to fetch knowledge",
+    });
+  }
+});
+
+/* ===============================
+   DELETE /knowledge/:id
+================================= */
+
+router.delete("/:id", async (req, res) => {
+  try {
+    const knowledge = await Knowledge.findById(req.params.id);
+
+    if (!knowledge) {
+      return res.status(404).json({
+        success: false,
+        message: "File not found",
+      });
+    }
+
+    // Delete physical file
+    if (knowledge.filePath && fs.existsSync(knowledge.filePath)) {
+      fs.unlinkSync(knowledge.filePath);
+    }
+
+    // Delete DB entry
+    await Knowledge.findByIdAndDelete(req.params.id);
+
+    res.json({
+      success: true,
+      message: "File deleted successfully",
+    });
+
+  } catch (err) {
+    console.error("DELETE KNOWLEDGE ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete file",
     });
   }
 });
