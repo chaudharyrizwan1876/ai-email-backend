@@ -1,5 +1,6 @@
 const express = require("express");
 const Email = require("../models/Email");
+const { fetchEmails } = require("../services/imapService");
 
 const router = express.Router();
 
@@ -27,19 +28,17 @@ function extractLatestReply(html = "") {
   return result.trim();
 }
 
-/**
- * GET /emails
- * Fetch emails from MongoDB (FULL BODY – NO TRUNCATION)
- */
 router.get("/", async (req, res) => {
   try {
-    const emails = await Email.find()
-      .sort({ date: -1 }); // ✅ limit removed
+
+    // 🔥 FORCE IMAP FETCH ON REFRESH
+    await fetchEmails();
+
+    const emails = await Email.find().sort({ date: -1 });
 
     const formattedEmails = emails.map((email) => {
       let cleanBody = email.emailBody || "";
 
-      // 🔹 Normalize whitespace only (NO TRUNCATION)
       cleanBody = cleanBody
         .replace(/\r\n/g, "\n")
         .replace(/\n{3,}/g, "\n\n")
@@ -58,13 +57,16 @@ router.get("/", async (req, res) => {
       success: true,
       emails: formattedEmails,
     });
+
   } catch (err) {
+
     console.error("FETCH EMAILS ERROR:", err);
 
     res.status(500).json({
       success: false,
       message: "Failed to fetch emails",
     });
+
   }
 });
 

@@ -14,6 +14,7 @@ const seedAdmin = async () => {
     const adminExists = await User.findOne({ role: "admin" });
 
     if (!adminExists) {
+
       if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
         console.log("⚠ ADMIN_EMAIL or ADMIN_PASSWORD not set in .env");
         return;
@@ -27,9 +28,11 @@ const seedAdmin = async () => {
 
       console.log("✅ Default admin created successfully");
       console.log(`📧 Admin Email: ${process.env.ADMIN_EMAIL}`);
+
     } else {
       console.log("✔ Admin already exists");
     }
+
   } catch (err) {
     console.error("Admin seed error:", err.message);
   }
@@ -40,13 +43,15 @@ const seedAdmin = async () => {
 mongoose
   .connect(process.env.MONGO_URI)
   .then(async () => {
+
     console.log("MongoDB connected");
 
-    // 🔥 Create admin if not exists
     await seedAdmin();
 
-    // 🔥 BACKGROUND IMAP SYNC
+    /* ================= EMAIL SYNC ================= */
+
     const startEmailSync = () => {
+
       console.log("Starting background email sync...");
 
       fetchEmails().catch((err) =>
@@ -54,11 +59,15 @@ mongoose
       );
 
       setInterval(() => {
+
         console.log("Running scheduled IMAP sync...");
+
         fetchEmails().catch((err) =>
           console.error("Scheduled IMAP sync error:", err.message)
         );
+
       }, 60 * 1000);
+
     };
 
     startEmailSync();
@@ -66,13 +75,14 @@ mongoose
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
+
   })
   .catch((err) => {
+
     console.error("MongoDB connection failed:", err.message);
 
     app.listen(PORT, () => {
-      console.log(
-        `Server running on port ${PORT} (without MongoDB connection)`
-      );
+      console.log(`Server running on port ${PORT} (without MongoDB connection)`);
     });
+
   });
