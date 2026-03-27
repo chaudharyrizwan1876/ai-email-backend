@@ -42,9 +42,10 @@ function fetchEmails() {
             try {
               const parsed = await simpleParser(buffer);
 
-              // ✅ Prefer HTML, fallback to text
-              const finalBody =
-                parsed.html || parsed.text || "";
+              // ✅ LIMIT BODY SIZE (FIX BSON ERROR)
+              const finalBody = (
+                parsed.html || parsed.text || ""
+              ).slice(0, 10000); // 🔥 LIMIT ADDED
 
               const emailData = {
                 from: parsed.from?.text || "Unknown sender",
