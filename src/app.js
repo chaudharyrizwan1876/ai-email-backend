@@ -47,6 +47,11 @@ app.get("/", (req, res) => {
   });
 });
 
+/* ✅ ADD THIS (IMPORTANT FIX) */
+app.get("/test", (req, res) => {
+  res.send("Node API working");
+});
+
 /* ================= 404 ================= */
 
 app.use((req, res) => {
