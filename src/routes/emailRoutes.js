@@ -1,6 +1,5 @@
 const express = require("express");
 const Email = require("../models/Email");
-const { fetchEmails } = require("../services/imapService");
 
 const router = express.Router();
 
@@ -31,8 +30,8 @@ function extractLatestReply(html = "") {
 router.get("/", async (req, res) => {
   try {
 
-    // 🔥 FORCE IMAP FETCH ON REFRESH
-    await fetchEmails();
+    // ❌ REMOVE THIS LINE
+    // await fetchEmails();
 
     const emails = await Email.find().sort({ date: -1 });
 
