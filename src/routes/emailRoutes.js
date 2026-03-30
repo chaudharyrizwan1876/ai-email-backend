@@ -8,7 +8,6 @@ function extractLatestReply(text = "") {
 
   const splitPatterns = [
     /On .*wrote:/i,
-    /From:/i,
     /-----Original Message-----/i,
   ];
 
