@@ -2,24 +2,16 @@ const express = require("express");
 const User = require("../models/User");
 const Signature = require("../models/Signature");
 const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend"); // ✅ NEW
 const { protect, adminOnly } = require("../middleware/authMiddleware");
 const path = require("path");
 const fs = require("fs");
 
 const router = express.Router();
 
-/* ================= MAIL TRANSPORTER ================= */
+// ✅ Resend init
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: false, // ✅ FIX
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
 /* ================= TEST ================= */
 
 router.get("/test", (req, res) => {
@@ -126,12 +118,12 @@ router.post("/send-email", protect, async (req, res) => {
       </div>
     `;
 
-    await transporter.sendMail({
-      from: `"Support Team" <${process.env.SMTP_USER}>`,
+    // ✅ RESEND SEND EMAIL
+    await resend.emails.send({
+      from: "Support <onboarding@resend.dev>", // test sender
       to,
       subject,
       html: htmlBody,
-      attachments
     });
 
     res.json({
