@@ -3,35 +3,27 @@ const Email = require("../models/Email");
 
 const router = express.Router();
 
-function extractLatestReply(html = "") {
-  if (!html) return "";
+function extractLatestReply(text = "") {
+  if (!text) return "";
 
   const splitPatterns = [
-    /<div class="gmail_quote"/i,
-    /<blockquote class="gmail_quote"/i,
-    /On .* wrote:/i,
+    /On .*wrote:/i,
     /From:/i,
     /-----Original Message-----/i,
   ];
 
-  let result = html;
-
   for (let pattern of splitPatterns) {
-    const matchIndex = result.search(pattern);
-    if (matchIndex !== -1) {
-      result = result.substring(0, matchIndex);
-      break;
+    const match = text.match(pattern);
+    if (match) {
+      return text.substring(0, match.index).trim();
     }
   }
 
-  return result.trim();
+  return text.trim();
 }
 
 router.get("/", async (req, res) => {
   try {
-
-    // ❌ REMOVE THIS LINE
-    // await fetchEmails();
 
     const emails = await Email.find().sort({ date: -1 });
 
@@ -47,7 +39,7 @@ router.get("/", async (req, res) => {
         _id: email._id,
         from: email.from,
         subject: email.subject,
-        body: cleanBody,
+        body: extractLatestReply(cleanBody), // ✅ FIX APPLIED
         date: email.date,
       };
     });
