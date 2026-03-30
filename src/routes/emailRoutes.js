@@ -13,7 +13,9 @@ function extractLatestReply(text = "") {
 
   for (let pattern of splitPatterns) {
     const match = text.match(pattern);
-    if (match) {
+
+    // ✅ FIX: sirf tab cut karo jab match beech me ho (start pe nahi)
+    if (match && match.index > 50) {
       return text.substring(0, match.index).trim();
     }
   }
@@ -38,7 +40,7 @@ router.get("/", async (req, res) => {
         _id: email._id,
         from: email.from,
         subject: email.subject,
-        body: extractLatestReply(cleanBody), // ✅ FIX APPLIED
+        body: extractLatestReply(cleanBody), // ✅ FINAL FIX
         date: email.date,
       };
     });
