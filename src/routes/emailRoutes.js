@@ -47,7 +47,7 @@ router.get("/", async (req, res) => {
         _id: email._id,
         from: email.from,
         subject: email.subject,
-        body: extractLatestReply(cleanBody),
+        body: cleanBody,
         date: email.date,
       };
     });
