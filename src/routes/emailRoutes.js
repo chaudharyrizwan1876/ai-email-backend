@@ -6,21 +6,19 @@ const router = express.Router();
 function extractLatestReply(text = "") {
   if (!text) return "";
 
-  const splitPatterns = [
-    /On .*wrote:/i,
-    /-----Original Message-----/i,
-  ];
+  // Normalize
+  let clean = text
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 
-  for (let pattern of splitPatterns) {
-    const match = text.match(pattern);
+  // Split into paragraphs
+  const parts = clean.split("\n\n");
 
-    // ✅ FIX: sirf tab cut karo jab match beech me ho (start pe nahi)
-    if (match && match.index > 50) {
-      return text.substring(0, match.index).trim();
-    }
-  }
+  // Take first 2–3 meaningful paragraphs
+  let result = parts.slice(0, 3).join("\n\n");
 
-  return text.trim();
+  return result.trim();
 }
 
 router.get("/", async (req, res) => {
