@@ -1,5 +1,6 @@
 const express = require("express");
 const Email = require("../models/Email");
+const { fetchEmails } = require("../services/imapService"); // ✅ ADDED
 
 const router = express.Router();
 
@@ -24,6 +25,9 @@ function extractLatestReply(text = "") {
 router.get("/", async (req, res) => {
   try {
 
+    // ✅ NEW: fetch latest emails in background (non-blocking)
+    fetchEmails().catch(() => {});
+
     const emails = await Email.find().sort({ date: -1 });
 
     const formattedEmails = emails.map((email) => {
@@ -38,7 +42,7 @@ router.get("/", async (req, res) => {
         _id: email._id,
         from: email.from,
         subject: email.subject,
-        body: extractLatestReply(cleanBody), // ✅ FINAL FIX
+        body: extractLatestReply(cleanBody), // ✅ SAME
         date: email.date,
       };
     });
