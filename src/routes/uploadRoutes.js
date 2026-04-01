@@ -1,30 +1,42 @@
 const express = require("express");
 const multer = require("multer");
-const path = require("path");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("cloudinary").v2;
 
 const router = express.Router();
 
-const storage = multer.diskStorage({
+// ✅ Cloudinary config
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-  destination: (req, file, cb) => {
-    cb(null, "src/uploads/");
+// ✅ Storage setup
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "ai-support-signatures",
+    allowed_formats: ["jpg", "png", "jpeg"],
   },
-
-  filename: (req, file, cb) => {
-    cb(null, "signature-" + Date.now() + path.extname(file.originalname));
-  }
-
 });
 
 const upload = multer({ storage });
 
+// ✅ Upload route
 router.post("/signature-image", upload.single("image"), (req, res) => {
-
-  res.json({
-    success: true,
-    imageUrl: `http://localhost:5000/uploads/${req.file.filename}`
-  });
-
+  try {
+    res.json({
+      success: true,
+      imageUrl: req.file.path, // ✅ Cloudinary URL
+    });
+  } catch (err) {
+    console.error("Cloudinary upload error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Image upload failed",
+    });
+  }
 });
 
 module.exports = router;
