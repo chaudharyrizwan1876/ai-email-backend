@@ -22,7 +22,7 @@ app.use(express.json());
 /* ================= STATIC FILES ================= */
 
 /* serve uploaded images */
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "src/uploads")));
 
 /* ================= ROUTES ================= */
 

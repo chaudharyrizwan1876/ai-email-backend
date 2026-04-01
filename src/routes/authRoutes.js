@@ -120,11 +120,17 @@ router.post("/send-email", protect, async (req, res) => {
 
     // ✅ RESEND SEND EMAIL
     await resend.emails.send({
-      from: "Support <onboarding@resend.dev>", // test sender
-      to,
-      subject,
-      html: htmlBody,
-    });
+  from: "Support <support@joaomiranda.com>", // ✅ verified domain
+  to,
+  subject,
+  html: htmlBody,
+
+  reply_to: "support@joaomiranda.com", // ✅ important
+
+  headers: {
+    "X-Entity-Ref-ID": Date.now().toString(), // ✅ avoid duplicate drops
+  },
+});
 
     res.json({
       success: true,
