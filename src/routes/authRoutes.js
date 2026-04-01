@@ -4,8 +4,6 @@ const Signature = require("../models/Signature");
 const jwt = require("jsonwebtoken");
 const { Resend } = require("resend"); // ✅ NEW
 const { protect, adminOnly } = require("../middleware/authMiddleware");
-const path = require("path");
-const fs = require("fs");
 
 const router = express.Router();
 
@@ -42,73 +40,59 @@ router.post("/send-email", protect, async (req, res) => {
 
     if (signature) {
 
-      let imagePath = null;
+      let signatureImage = "";
 
-      if (signature.photo) {
-        const filename = signature.photo.split("/uploads/")[1];
-        imagePath = path.join(__dirname, "../uploads", filename);
-      }
-
-      if (imagePath && fs.existsSync(imagePath)) {
-        attachments.push({
-          filename: "signature.png",
-          path: imagePath,
-          cid: "signatureimg"
-        });
+      if (signature?.photo) {
+        signatureImage = `
+    <td style="padding-right:10px">
+      <img src="${signature.photo}" width="70" height="70"
+           style="object-fit:cover;border-radius:4px"/>
+    </td>
+  `;
       }
 
       signatureHtml = `
-      <br/><br/>
+<br/><br/>
 
-      <table cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif">
+<table cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif">
 
-        <tr>
+  <tr>
 
-          ${
-            attachments.length
-              ? `<td style="padding-right:10px">
-                   <img src="cid:signatureimg" width="70" height="70"
-                        style="object-fit:cover;border-radius:4px"/>
-                 </td>`
-              : ""
-          }
+    ${signatureImage}
 
-          <td>
+    <td>
 
-            <div style="font-weight:bold;font-size:14px">
-              ${signature.name || ""}
-            </div>
+      <div style="font-weight:bold;font-size:14px">
+        ${signature.name || ""}
+      </div>
 
-            <div style="font-size:13px;color:#555">
-              ${signature.role || ""} ${
-                signature.company ? `| ${signature.company}` : ""
-              }
-            </div>
+      <div style="font-size:13px;color:#555">
+        ${signature.role || ""} ${signature.company ? `| ${signature.company}` : ""
+        }
+      </div>
 
-            ${
-              signature.website
-                ? `<div style="font-size:13px">
-                     <a href="${signature.website}" target="_blank">
-                       ${signature.website}
-                     </a>
-                   </div>`
-                : ""
-            }
+      ${signature.website
+          ? `<div style="font-size:13px">
+               <a href="${signature.website}" target="_blank">
+                 ${signature.website}
+               </a>
+             </div>`
+          : ""
+        }
 
-            ${
-              signature.workingHours
-                ? `<div style="font-size:12px;color:#777">
-                     ${signature.workingHours}
-                   </div>`
-                : ""
-            }
+      ${signature.workingHours
+          ? `<div style="font-size:12px;color:#777">
+               ${signature.workingHours}
+             </div>`
+          : ""
+        }
 
-          </td>
+    </td>
 
-        </tr>
+  </tr>
 
-      </table>
-      `;
+</table>
+`;
     }
 
     const htmlBody = `
@@ -120,17 +104,17 @@ router.post("/send-email", protect, async (req, res) => {
 
     // ✅ RESEND SEND EMAIL
     await resend.emails.send({
-  from: "Support <support@joaomiranda.com>", // ✅ verified domain
-  to,
-  subject,
-  html: htmlBody,
+      from: "Support <support@joaomiranda.com>", // ✅ verified domain
+      to,
+      subject,
+      html: htmlBody,
 
-  reply_to: "support@joaomiranda.com", // ✅ important
+      reply_to: "support@joaomiranda.com", // ✅ important
 
-  headers: {
-    "X-Entity-Ref-ID": Date.now().toString(), // ✅ avoid duplicate drops
-  },
-});
+      headers: {
+        "X-Entity-Ref-ID": Date.now().toString(), // ✅ avoid duplicate drops
+      },
+    });
 
     res.json({
       success: true,
